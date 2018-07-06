@@ -11,7 +11,7 @@ from scipy.misc import imsave
 
 from preprocess import *
 
-def make_keras(content_path, style_path)
+def make_keras(content_path, style_path):
 
     #Defining variables in Keras backend
     content_arr, style_arr = process_images(content_path,style_path)
@@ -38,12 +38,14 @@ layers = make_keras('./Images/content.jpg','./Images/style.jpg')
 content_weight = 0.025
 style_weight = 5.0
 total_variation_weight = 1.0
+height = 512
+width = 512
 
 #Use feature spaces provided by model layers to define loss functions
 
 #We will obtain the content feature from layer block2_conv2 as follows from Johnson et al. (2016)
 
-def content_loss(initial_loss):
+def content_loss(loss):
 
     #Obtaining content and combined image features information from appropriate layer
     content_features = layers['block2_conv2'][0, :, :, :]
@@ -51,11 +53,11 @@ def content_loss(initial_loss):
 
     #Computing scaled Euclidean distance between feature representations of the 2 images
     content_loss = backend.sum(backend.square(combined_features - content_features))
-    loss += content_weight * content_loss)
+    loss += content_weight * content_loss
 
     return loss
 
-def style_loss(initial_loss):
+def style_loss(loss):
 
     #Constants for style loss (temp)
     feature_layers = ['block1_conv2', 'block2_conv2',
@@ -63,17 +65,7 @@ def style_loss(initial_loss):
                     'block5_conv3']
 
     channels = 3
-    size = 512 * 512
-    
-    #Computing gram matrix of style image
-    style_features = backend.batch_flatten(backend.permute_dimensions(style, (2, 0, 1)))
-    style_gram = backend.dot(style_features, backend.transpose(style_features))
-
-    #Computing gram matrix of combined image
-    combined_features = backend.batch_flatten(backend.permute_dimensions(combined, (2, 0, 1)))
-    combined_gram = backend.dot(combined_features, backend.transpose(combined_features))
-    
-    back_sum = backend.sum(backend.square(style_gram - combined_gram)) / (4. * (channels ** 2) * (size ** 2))
+    size = height * width
 
     for layer_name in feature_layers:
 
@@ -96,7 +88,7 @@ def style_loss(initial_loss):
 
     return loss
 
-def total_variation_loss(initial_loss):
+def total_variation_loss(loss):
     combined_image = backend.placeholder((1, 512, 512, 3))
 
     a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
@@ -110,8 +102,8 @@ def total_variation_loss(initial_loss):
 def compute_losses():
     loss = backend.variable(0.)
 
-    content_loss = content_loss(loss)
-    style_loss = style_loss(content_loss)
-    total_variation_loss = total_variation_loss(style_loss)
-
-    return total_variation_loss
+    content = content_loss(loss)
+    style = style_loss(content)
+    total = total_variation_loss(style)
+    
+    return total
