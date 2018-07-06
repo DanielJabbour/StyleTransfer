@@ -39,14 +39,11 @@ content_weight = 0.025
 style_weight = 5.0
 total_variation_weight = 1.0
 
-#initialize total loss to 0
-loss = backend.variable(0.)
-
 #Use feature spaces provided by model layers to define loss functions
 
 #We will obtain the content feature from layer block2_conv2 as follows from Johnson et al. (2016)
 
-def content_loss():
+def content_loss(initial_loss):
 
     #Obtaining content and combined image features information from appropriate layer
     content_features = layers['block2_conv2'][0, :, :, :]
@@ -58,7 +55,7 @@ def content_loss():
 
     return loss
 
-def style_loss():
+def style_loss(initial_loss):
 
     #Constants for style loss (temp)
     feature_layers = ['block1_conv2', 'block2_conv2',
@@ -99,7 +96,7 @@ def style_loss():
 
     return loss
 
-def total_variation_loss():
+def total_variation_loss(initial_loss):
     combined_image = backend.placeholder((1, 512, 512, 3))
 
     a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
@@ -109,3 +106,12 @@ def total_variation_loss():
     loss += total_variation_weight * total_variation_loss
 
     return loss
+
+def compute_losses():
+    loss = backend.variable(0.)
+
+    content_loss = content_loss(loss)
+    style_loss = style_loss(content_loss)
+    total_variation_loss = total_variation_loss(style_loss)
+
+    return total_variation_loss
