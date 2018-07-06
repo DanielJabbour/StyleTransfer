@@ -58,3 +58,43 @@ def content_loss():
 
     return loss
 
+def style_loss():
+
+    #Constants for style loss (temp)
+    feature_layers = ['block1_conv2', 'block2_conv2',
+                    'block3_conv3', 'block4_conv3',
+                    'block5_conv3']
+
+    channels = 3
+    size = 512 * 512
+    
+    #Computing gram matrix of style image
+    style_features = backend.batch_flatten(backend.permute_dimensions(style, (2, 0, 1)))
+    style_gram = backend.dot(style_features, backend.transpose(style_features))
+
+    #Computing gram matrix of combined image
+    combined_features = backend.batch_flatten(backend.permute_dimensions(combined, (2, 0, 1)))
+    combined_gram = backend.dot(combined_features, backend.transpose(combined_features))
+    
+    back_sum = backend.sum(backend.square(style_gram - combined_gram)) / (4. * (channels ** 2) * (size ** 2))
+
+    for layer_name in feature_layers:
+
+        #Obtaining appropriate feature layers
+        layer_features = layers[layer_name]
+        style_features = layer_features[1, :, :, :]
+        combined_features = layer_features[2, :, :, :]
+
+        #Compute gram matricies for style and combined images
+        style_flattened = backend.batch_flatten(backend.permute_dimensions(style_features, (2, 0, 1)))
+        style_gram = backend.dot(style_flattened, backend.transpose(style_flattened))
+
+        combined_flattened = backend.batch_flatten(backend.permute_dimensions(combined_features, (2, 0, 1)))
+        combined_gram = combined_gram = backend.dot(combined_flattened, backend.transpose(combined_flattened))
+
+        #Compute current style loss
+        style_loss = backend.sum(backend.square(style_gram - combined_gram)) / (4. * (channels ** 2) * (size ** 2))
+
+        loss += style_loss * (style_weight / len(feature_layers))
+
+    return loss
