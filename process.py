@@ -12,6 +12,8 @@ from scipy.optimize import fmin_l_bfgs_b
 from scipy.misc import imsave
 
 def process_images(content_path, style_path):
+    #This function takes 2 image paths as an argument, one content and one style
+    #The images are formated appropriately to be used in a TensorFlow Graph
 
     #Loading and resizing images to width x height of 512 x 512
     content_image = Image.open(content_path)
@@ -45,4 +47,7 @@ def process_images(content_path, style_path):
     content_arr = content_arr[:, :, :, ::-1]
     style_arr = style_arr[:, :, :, ::-1]
 
-    
+    return content_arr, style_arr
+
+#Sample call
+#content, style = process_images('./Images/content.jpg','./Images/style.jpg')
