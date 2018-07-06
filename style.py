@@ -98,3 +98,14 @@ def style_loss():
         loss += style_loss * (style_weight / len(feature_layers))
 
     return loss
+
+def total_variation_loss():
+    combined_image = backend.placeholder((1, 512, 512, 3))
+
+    a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
+    b = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, :height-1, 1:, :])
+    total_variation_loss = backend.sum(backend.pow(a + b, 1.25))
+
+    loss += total_variation_weight * total_variation_loss
+
+    return loss
