@@ -9,6 +9,8 @@ from keras.applications.vgg16 import VGG16
 from scipy.optimize import fmin_l_bfgs_b
 from scipy.misc import imsave
 
+import numpy as np
+
 from preprocess import *
 
 def make_keras(content_path, style_path):
@@ -89,6 +91,9 @@ def style_loss(loss):
     return loss
 
 def total_variation_loss(loss):
+
+    #Maybe compute this differently?
+
     combined_image = backend.placeholder((1, 512, 512, 3))
 
     a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
@@ -105,5 +110,18 @@ def compute_losses():
     content = content_loss(loss)
     style = style_loss(content)
     total = total_variation_loss(style)
-    
+
     return total
+
+def loss_func():
+
+    output = [compute_losses()]
+    combined_image = backend.placeholder((1, 512, 512, 3))
+    output_function = backend.function([combined_image], output)
+
+    init_rand = np.random.uniform(0, 255, (1, height, width, 3)) - 128
+    init_rand.reshape((1,height,width,3))
+    outputs = output_function([init_rand])
+    loss = outs[0]
+
+    return loss
