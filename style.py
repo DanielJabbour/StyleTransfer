@@ -5,6 +5,7 @@ import time
 from keras import backend
 from keras.models import Model
 from keras.applications.vgg16 import VGG16
+from keras.applications.vgg16 import preprocess_input
 
 from scipy.optimize import fmin_l_bfgs_b
 from scipy.misc import imsave
@@ -112,17 +113,4 @@ def compute_losses():
     total = total_variation_loss(style)
 
     return total
-
-def loss_func():
-
-    output = [compute_losses()]
-    combined_image = backend.placeholder((1, 512, 512, 3))
-    output_function = backend.function([combined_image], output)
-
-    init_rand = np.random.uniform(0, 255, (1, height, width, 3)) - 128
-    init_rand.reshape((1,height,width,3))
-    outputs = output_function([init_rand])
-    loss = outputs[0]
-
-    return loss
-
+    
