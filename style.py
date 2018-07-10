@@ -122,6 +122,7 @@ def loss_func():
     init_rand = np.random.uniform(0, 255, (1, height, width, 3)) - 128
     init_rand.reshape((1,height,width,3))
     outputs = output_function([init_rand])
-    loss = outs[0]
+    loss = outputs[0]
 
     return loss
+
