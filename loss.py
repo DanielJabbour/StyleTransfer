@@ -1,52 +1,22 @@
-from __future__ import print_function
-
 import time
+import numpy as np
 
 from keras import backend
 from keras.models import Model
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input
 
-from scipy.optimize import fmin_l_bfgs_b
-from scipy.misc import imsave
-
-import numpy as np
-
 from preprocess import *
 
-def make_keras(content_path, style_path):
-
-    #Defining variables in Keras backend
-    content_arr, style_arr = process_images(content_path,style_path)
-    content_image = backend.variable(content_arr)
-    style_image = backend.variable(style_arr)
-
-    #Temporary placeholder for combination of content and style image
-    combined_image = backend.placeholder((1, 512, 512, 3))
-
-    #Building single tensor containing style, content, and combination images suitable for Keras's VGG16
-    input_tensor = backend.concatenate([content_image, style_image, combined_image], axis=0)
-
-    #Accessing Keras's pretrained VGG16 model, set top to false as we are not concerned with classification
-    model = VGG16(input_tensor=input_tensor, weights='imagenet', include_top=False)
-
-    #Storing layer information in a dictionary
-    layers = dict([(layer.name, layer.output) for layer in model.layers])
-
-    return layers
-
-layers = make_keras('./Images/content.jpg','./Images/style.jpg')
-
-#We are minimizing a loss function consisting of content, style, and total variation hence we define 3 weights
 content_weight = 0.025
 style_weight = 5.0
 total_variation_weight = 1.0
+
 height = 512
 width = 512
+combined_image = backend.placeholder((1, 512, 512, 3))
 
-#Use feature spaces provided by model layers to define loss functions
-
-#We will obtain the content feature from layer block2_conv2 as follows from Johnson et al. (2016)
+layers = process_images('./Images/content.jpg','./Images/style.jpg', combined_image)
 
 def content_loss(loss):
 
@@ -92,7 +62,6 @@ def style_loss(loss):
     return loss
 
 def total_variation_loss(loss):
-
     #Maybe compute this differently?
 
     combined_image = backend.placeholder((1, 512, 512, 3))
@@ -105,6 +74,7 @@ def total_variation_loss(loss):
 
     return loss
 
+# Helper function to make loss collection easier
 def compute_losses():
     loss = backend.variable(0.)
 
@@ -113,4 +83,24 @@ def compute_losses():
     total = total_variation_loss(style)
 
     return total
-    
+
+# Get losses and gradients, define function representing combination of the 2
+loss = compute_losses()
+gradients = backend.gradients(loss, combined_image)
+
+loss_grad = [loss] + gradients
+f_combined = backend.function([combined_image], loss_grad)
+
+def losses(x):
+    x = x.reshape((1, height, width, 3))
+    outs = f_combined([x])
+    loss_value = outs[0]
+
+    return loss_value
+
+def gradients(x):
+    x = x.reshape((1, height, width, 3))
+    outs = f_combined([x])
+    grad_values = outs[1].flatten().astype('float64')
+
+    return grad_values
