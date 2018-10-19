@@ -1,22 +1,22 @@
-import time
 import numpy as np
 
+import tensorflow as tf
 from keras import backend
 from keras.models import Model
-from keras.applications.vgg16 import VGG16
-from keras.applications.vgg16 import preprocess_input
 
 from preprocess import *
+
+height = 512
+width = 512
+combined_image = backend.placeholder((1, height, width, 3))
 
 content_weight = 0.025
 style_weight = 5.0
 total_variation_weight = 1.0
 
-height = 512
-width = 512
-combined_image = backend.placeholder((1, 512, 512, 3))
+layers = process_images('Images/content.jpg', 'Images/style.jpg', combined_image)
 
-layers = process_images('./Images/content.jpg','./Images/style.jpg', combined_image)
+loss = tf.Variable(0.)
 
 def content_loss(loss):
 
@@ -25,14 +25,14 @@ def content_loss(loss):
     combined_features = layers['block2_conv2'][2, :, :, :]
 
     #Computing scaled Euclidean distance between feature representations of the 2 images
-    content_loss = backend.sum(backend.square(combined_features - content_features))
+    content_loss = backend.sum(tf.square(combined_features - content_features))
     loss += content_weight * content_loss
 
     return loss
 
 def style_loss(loss):
 
-    #Constants for style loss (temp)
+    #Style feature layers
     feature_layers = ['block1_conv2', 'block2_conv2',
                     'block3_conv3', 'block4_conv3',
                     'block5_conv3']
@@ -64,8 +64,6 @@ def style_loss(loss):
 def total_variation_loss(loss):
     #Maybe compute this differently?
 
-    combined_image = backend.placeholder((1, 512, 512, 3))
-
     a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
     b = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, :height-1, 1:, :])
     total_variation_loss = backend.sum(backend.pow(a + b, 1.25))
@@ -74,9 +72,7 @@ def total_variation_loss(loss):
 
     return loss
 
-# Helper function to make loss collection easier
-def compute_losses():
-    loss = backend.variable(0.)
+def compute_losses(loss):
 
     content = content_loss(loss)
     style = style_loss(content)
@@ -84,10 +80,8 @@ def compute_losses():
 
     return total
 
-# Get losses and gradients, define function representing combination of the 2
-loss = compute_losses()
+loss = compute_losses(loss)
 gradients = backend.gradients(loss, combined_image)
-
 loss_grad = [loss] + gradients
 f_combined = backend.function([combined_image], loss_grad)
 

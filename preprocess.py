@@ -1,7 +1,8 @@
 from PIL import Image
 import numpy as np
 
-from keras import backend
+import tensorflow as tf
+
 from keras.models import Model
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input
@@ -30,25 +31,25 @@ def process_images(content_path, style_path, combined_image):
     content_arr = np.expand_dims(content_arr, axis=0)
     style_arr = np.expand_dims(style_arr, axis=0)
 
-    #Subtract mean RGB value from content and style arrays
-    content_arr[:, :, :, 0] -= content_rgb_avg[0]
-    content_arr[:, :, :, 1] -= content_rgb_avg[1]
-    content_arr[:, :, :, 2] -= content_rgb_avg[2]
+    #Subtract mean RGB value of the imagenet dataset
+    content_arr[:, :, :, 0] -= 103.939
+    content_arr[:, :, :, 1] -= 116.779
+    content_arr[:, :, :, 2] -= 123.68
 
-    style_arr[:, :, :, 0] -= style_rgb_avg[0]
-    style_arr[:, :, :, 1] -= style_rgb_avg[1]
-    style_arr[:, :, :, 2] -= style_rgb_avg[2]
+    style_arr[:, :, :, 0] -= 103.939
+    style_arr[:, :, :, 1] -= 116.779
+    style_arr[:, :, :, 2] -= 123.68
 
     #Invert last array dimension to convert from RGB to BGR
     content_arr = content_arr[:, :, :, ::-1]
     style_arr = style_arr[:, :, :, ::-1]
 
     # Pass to tensorflow, use a white noise placeholder image for initial combination
-    content_image = backend.variable(content_arr)
-    style_image = backend.variable(style_arr)
+    content_image = tf.Variable(content_arr)
+    style_image = tf.Variable(style_arr)
 
     #Building single tensor containing style, content, and combination images suitable for Keras's VGG16
-    input_tensor = backend.concatenate([content_image, style_image, combined_image], axis=0)
+    input_tensor = tf.concat([content_image, style_image, combined_image], axis=0)
 
     #Accessing Keras's pretrained VGG16 model, set top to false as we are not concerned with classification
     model = VGG16(input_tensor=input_tensor, weights='imagenet', include_top=False)
