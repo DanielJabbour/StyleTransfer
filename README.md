@@ -6,9 +6,22 @@ Artistic style transfer is the process of combining the content of one image int
   <img src="Images/stanford.png?raw=true" title="Starry Night combined with Stanford's Hoover Tower, image taken from Stanford's CS231n course" alt="Style Transfer Image"/>
 </p>
 
-This project was built using the Numpy, Tensorflow and Keras libraries, and trained on an AWS EC2 GPU instance. You can clone this repository and give it a try with your own images! Depending on your computational power though, you might be waiting a long time before you get your new art.
+This project was built using the Numpy, Scipy, and Tensorflow/Keras libraries, and trained on an AWS EC2 GPU instance. You can clone this repository and give it a try with your own images! Depending on your computational power though, you might be waiting a long time before you get your new art.
+
+## Requirements
+
+You will need to install the following python packages:
+
+ * Numpy
+ * Scipy
+ * Pillow
+ * Tensorflow
+ * Keras
+
+Please note that as of when this was posted, support for tensorflow for Python 3.7.X is unavailable, and you won't be able to test this using Python 3.7. Python version 3.6 or below will have support and should work fine.
 
 ## Data Preprocessing
+
 Before performing any training, the content and style images have to be formatted into appropriate Numpy arrays to be used in a TensorFlow Graph, as well as slightly modified to achieve better results. This is accomplished through the "preprocess" script where images are converted into a 1 x 512 x 512 x 3 array with the mean RGB values subtracted, then inverted to follow a BGR colour scheme.
 
 ## Content and Style Representations
@@ -21,11 +34,11 @@ Content loss was simply defined as the euclidean distance between our content im
 
 ## Acknowledgements
 
-I would like to thank Stanford University's excellent academic documentation. A majority of the basis knowledge for this project was established thanks to their CS231n course on Convolutional Neural Networks.
+I would like to thank Stanford University's excellent academic documentation. A majority of the basis knowledge for this project was established thanks to their CS231n course on Convolutional Neural Networks, as well as a variety articles.
 
 A great resource for learning to use TensorFlow, a machine learning library, can be found on their official site here: https://www.tensorflow.org/tutorials/
 
-You can learn more about this project by reading the original publication from Leon A. Gatys on neural style transfer here: https://arxiv.org/pdf/1508.06576.pdf
+You can learn more about neural style transfer by reading the original publication from Leon A. Gatys transfer here: https://arxiv.org/pdf/1508.06576.pdf
 
-In the future, I would like to implement the feed-forward method to accomplish faster and more artistic results, introduced by Justin Johnson as published here: https://arxiv.org/pdf/1603.08155.pdf
+This method for achieving style transfer is rather slow, especially if you don't have access to a GPU. There's a great implementation of style transfer known as the feed-forward method, accomplishing much faster and more artistic results,introduced by Justin Johnson as published here: https://arxiv.org/pdf/1603.08155.pdf
 
