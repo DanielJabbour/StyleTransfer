@@ -6,14 +6,11 @@ from keras.models import Model
 
 from preprocess import *
 
-height = 512
-width = 512
-combined_image = backend.placeholder((1, height, width, 3))
-
 content_weight = 0.025
 style_weight = 5.0
 total_variation_weight = 1.0
 
+combined_image = backend.placeholder((1, 512, 512, 3))
 layers = process_images('Images/content.jpg', 'Images/style.jpg', combined_image)
 
 loss = tf.Variable(0.)
@@ -33,39 +30,41 @@ def content_loss(loss):
 def style_loss(loss):
 
     #Style feature layers
-    feature_layers = ['block1_conv2', 'block2_conv2',
+    features = ['block1_conv2', 'block2_conv2',
                     'block3_conv3', 'block4_conv3',
                     'block5_conv3']
 
     channels = 3
-    size = height * width
+    size = 262144
 
-    for layer_name in feature_layers:
+    for layer in features:
 
         #Obtaining appropriate feature layers
-        layer_features = layers[layer_name]
+        layer_features = layers[layer]
         style_features = layer_features[1, :, :, :]
         combined_features = layer_features[2, :, :, :]
 
         #Compute gram matricies for style and combined images
-        style_flattened = backend.batch_flatten(backend.permute_dimensions(style_features, (2, 0, 1)))
+        style_permute = backend.permute_dimensions(style_features, (2, 0, 1))
+        style_flattened = backend.batch_flatten(style_permute)
         style_gram = backend.dot(style_flattened, backend.transpose(style_flattened))
 
-        combined_flattened = backend.batch_flatten(backend.permute_dimensions(combined_features, (2, 0, 1)))
+        combined_permute = backend.permute_dimensions(combined_features, (2, 0, 1))
+        combined_flattened = backend.batch_flatten(combined_permute)
         combined_gram = combined_gram = backend.dot(combined_flattened, backend.transpose(combined_flattened))
 
         #Compute current style loss
         style_loss = backend.sum(backend.square(style_gram - combined_gram)) / (4. * (channels ** 2) * (size ** 2))
 
-        loss += style_loss * (style_weight / len(feature_layers))
+        loss += style_loss * (style_weight / len(features))
 
     return loss
 
 def total_variation_loss(loss):
     #Maybe compute this differently?
 
-    a = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, 1:, :width-1, :])
-    b = backend.square(combined_image[:, :height-1, :width-1, :] - combined_image[:, :height-1, 1:, :])
+    a = backend.square(combined_image[:, :511, :511, :] - combined_image[:, 1:, :511, :])
+    b = backend.square(combined_image[:, :511, :511, :] - combined_image[:, :511, 1:, :])
     total_variation_loss = backend.sum(backend.pow(a + b, 1.25))
 
     loss += total_variation_weight * total_variation_loss
@@ -86,15 +85,15 @@ loss_grad = [loss] + gradients
 f_combined = backend.function([combined_image], loss_grad)
 
 def losses(x):
-    x = x.reshape((1, height, width, 3))
-    outs = f_combined([x])
-    loss_value = outs[0]
+    x = x.reshape((1, 512, 512, 3))
+    outputs = f_combined([x])
+    loss_value = outputs[0]
 
     return loss_value
 
 def gradients(x):
-    x = x.reshape((1, height, width, 3))
-    outs = f_combined([x])
-    grad_values = outs[1].flatten().astype('float64')
+    x = x.reshape((1, 512, 512, 3))
+    outputs = f_combined([x])
+    grad_values = outputs[1].flatten().astype('float64')
 
     return grad_values
